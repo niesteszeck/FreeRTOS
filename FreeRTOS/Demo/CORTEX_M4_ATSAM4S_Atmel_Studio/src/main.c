@@ -1,7 +1,7 @@
 /*
-    FreeRTOS V7.3.0 - Copyright (C) 2012 Real Time Engineers Ltd.
+    FreeRTOS V7.4.0 - Copyright (C) 2013 Real Time Engineers Ltd.
 
-    FEATURES AND PORTS ARE ADDED TO FREERTOS ALL THE TIME.  PLEASE VISIT 
+    FEATURES AND PORTS ARE ADDED TO FREERTOS ALL THE TIME.  PLEASE VISIT
     http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
 
     ***************************************************************************
@@ -29,20 +29,23 @@
     FreeRTOS is free software; you can redistribute it and/or modify it under
     the terms of the GNU General Public License (version 2) as published by the
     Free Software Foundation AND MODIFIED BY the FreeRTOS exception.
-    >>>NOTE<<< The modification to the GPL is included to allow you to
+
+    >>>>>>NOTE<<<<<< The modification to the GPL is included to allow you to
     distribute a combined work that includes FreeRTOS without being obliged to
     provide the source code for proprietary components outside of the FreeRTOS
-    kernel.  FreeRTOS is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-    more details. You should have received a copy of the GNU General Public
-    License and the FreeRTOS license exception along with FreeRTOS; if not it
-    can be viewed here: http://www.freertos.org/a00114.html and also obtained
-    by writing to Richard Barry, contact details for whom are available on the
-    FreeRTOS WEB site.
+    kernel.
+
+    FreeRTOS is distributed in the hope that it will be useful, but WITHOUT ANY
+    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+    details. You should have received a copy of the GNU General Public License
+    and the FreeRTOS license exception along with FreeRTOS; if not itcan be
+    viewed here: http://www.freertos.org/a00114.html and also obtained by
+    writing to Real Time Engineers Ltd., contact details for whom are available
+    on the FreeRTOS WEB site.
 
     1 tab == 4 spaces!
-    
+
     ***************************************************************************
      *                                                                       *
      *    Having a problem?  Start by reading the FAQ "My application does   *
@@ -52,18 +55,21 @@
      *                                                                       *
     ***************************************************************************
 
-    
-    http://www.FreeRTOS.org - Documentation, training, latest versions, license 
-    and contact details.  
-    
-    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
-    including FreeRTOS+Trace - an indispensable productivity tool.
 
-    Real Time Engineers ltd license FreeRTOS to High Integrity Systems, who sell 
-    the code with commercial support, indemnification, and middleware, under 
-    the OpenRTOS brand: http://www.OpenRTOS.com.  High Integrity Systems also
-    provide a safety engineered and independently SIL3 certified version under 
-    the SafeRTOS brand: http://www.SafeRTOS.com.
+    http://www.FreeRTOS.org - Documentation, books, training, latest versions, 
+    license and Real Time Engineers Ltd. contact details.
+
+    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
+    including FreeRTOS+Trace - an indispensable productivity tool, and our new
+    fully thread aware and reentrant UDP/IP stack.
+
+    http://www.OpenRTOS.com - Real Time Engineers ltd license FreeRTOS to High 
+    Integrity Systems, who sell the code with commercial support, 
+    indemnification and middleware, under the OpenRTOS brand.
+    
+    http://www.SafeRTOS.com - High Integrity Systems also provide a safety 
+    engineered and independently SIL3 certified version for use in safety and 
+    mission critical applications that require provable dependability.
 */
 
 /******************************************************************************
@@ -86,9 +92,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-/* Standard demo includes - just needed for the LED (ParTest) initialisation
-function. */
+/* Standard demo includes. */
 #include "partest.h"
+#include "QueueSet.h"
 
 /* Atmel library includes. */
 #include <asf.h>
@@ -104,9 +110,9 @@ or 0 to run the more comprehensive test and demo application. */
  */
 static void prvSetupHardware( void );
 
-/* 
+/*
  * main_blinky() is used when mainCREATE_SIMPLE_BLINKY_DEMO_ONLY is set to 1.
- * main_full() is used when mainCREATE_SIMPLE_BLINKY_DEMO_ONLY is set to 0. 
+ * main_full() is used when mainCREATE_SIMPLE_BLINKY_DEMO_ONLY is set to 0.
  */
 extern void main_blinky( void );
 extern void main_full( void );
@@ -146,11 +152,11 @@ extern void SystemCoreClockUpdate( void );
 
 	/* Ensure all priority bits are assigned as preemption priority bits. */
 	NVIC_SetPriorityGrouping( 0 );
-	
+
 	/* Atmel library function to setup for the evaluation kit being used. */
 	board_init();
 
-	/* Perform any configuration necessary to use the ParTest LED output 
+	/* Perform any configuration necessary to use the ParTest LED output
 	functions. */
 	vParTestInitialise();
 }
@@ -202,11 +208,18 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, signed char *pcTaskName 
 
 void vApplicationTickHook( void )
 {
-	/* This function will be called by each tick interrupt if 
+	/* This function will be called by each tick interrupt if
 	configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h.  User code can be
 	added here, but the tick hook is called from an interrupt context, so
 	code must not attempt to block, and only the interrupt safe FreeRTOS API
-	functions can be used (those that end in FromISR()). */
+	functions can be used (those that end in FromISR()).  */
+
+	#if ( mainCREATE_SIMPLE_BLINKY_DEMO_ONLY == 0 )
+	{
+		/* In this case the tick hook is used as part of the queue set test. */
+		vQueueSetAccessQueueSetFromISR();
+	}
+	#endif /* mainCREATE_SIMPLE_BLINKY_DEMO_ONLY */
 }
 /*-----------------------------------------------------------*/
 

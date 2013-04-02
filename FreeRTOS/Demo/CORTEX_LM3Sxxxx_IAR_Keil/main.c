@@ -1,7 +1,7 @@
 /*
-    FreeRTOS V7.3.0 - Copyright (C) 2012 Real Time Engineers Ltd.
+    FreeRTOS V7.4.0 - Copyright (C) 2013 Real Time Engineers Ltd.
 
-    FEATURES AND PORTS ARE ADDED TO FREERTOS ALL THE TIME.  PLEASE VISIT 
+    FEATURES AND PORTS ARE ADDED TO FREERTOS ALL THE TIME.  PLEASE VISIT
     http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
 
     ***************************************************************************
@@ -29,20 +29,23 @@
     FreeRTOS is free software; you can redistribute it and/or modify it under
     the terms of the GNU General Public License (version 2) as published by the
     Free Software Foundation AND MODIFIED BY the FreeRTOS exception.
-    >>>NOTE<<< The modification to the GPL is included to allow you to
+
+    >>>>>>NOTE<<<<<< The modification to the GPL is included to allow you to
     distribute a combined work that includes FreeRTOS without being obliged to
     provide the source code for proprietary components outside of the FreeRTOS
-    kernel.  FreeRTOS is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-    more details. You should have received a copy of the GNU General Public
-    License and the FreeRTOS license exception along with FreeRTOS; if not it
-    can be viewed here: http://www.freertos.org/a00114.html and also obtained
-    by writing to Richard Barry, contact details for whom are available on the
-    FreeRTOS WEB site.
+    kernel.
+
+    FreeRTOS is distributed in the hope that it will be useful, but WITHOUT ANY
+    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+    details. You should have received a copy of the GNU General Public License
+    and the FreeRTOS license exception along with FreeRTOS; if not itcan be
+    viewed here: http://www.freertos.org/a00114.html and also obtained by
+    writing to Real Time Engineers Ltd., contact details for whom are available
+    on the FreeRTOS WEB site.
 
     1 tab == 4 spaces!
-    
+
     ***************************************************************************
      *                                                                       *
      *    Having a problem?  Start by reading the FAQ "My application does   *
@@ -52,18 +55,21 @@
      *                                                                       *
     ***************************************************************************
 
-    
-    http://www.FreeRTOS.org - Documentation, training, latest versions, license 
-    and contact details.  
-    
-    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
-    including FreeRTOS+Trace - an indispensable productivity tool.
 
-    Real Time Engineers ltd license FreeRTOS to High Integrity Systems, who sell 
-    the code with commercial support, indemnification, and middleware, under 
-    the OpenRTOS brand: http://www.OpenRTOS.com.  High Integrity Systems also
-    provide a safety engineered and independently SIL3 certified version under 
-    the SafeRTOS brand: http://www.SafeRTOS.com.
+    http://www.FreeRTOS.org - Documentation, books, training, latest versions, 
+    license and Real Time Engineers Ltd. contact details.
+
+    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
+    including FreeRTOS+Trace - an indispensable productivity tool, and our new
+    fully thread aware and reentrant UDP/IP stack.
+
+    http://www.OpenRTOS.com - Real Time Engineers ltd license FreeRTOS to High 
+    Integrity Systems, who sell the code with commercial support, 
+    indemnification and middleware, under the OpenRTOS brand.
+    
+    http://www.SafeRTOS.com - High Integrity Systems also provide a safety 
+    engineered and independently SIL3 certified version for use in safety and 
+    mission critical applications that require provable dependability.
 */
 
 
@@ -118,6 +124,7 @@ and the TCP/IP stack together cannot be accommodated with the 32K size limit. */
 
 /* Standard includes. */
 #include <stdio.h>
+#include <string.h>
 
 /* Scheduler includes. */
 #include "FreeRTOS.h"
@@ -151,6 +158,7 @@ and the TCP/IP stack together cannot be accommodated with the 32K size limit. */
 #include "QPeek.h"
 #include "recmutex.h"
 #include "IntQueue.h"
+#include "QueueSet.h"
 
 /*-----------------------------------------------------------*/
 
@@ -254,12 +262,13 @@ int main( void )
     vStartIntegerMathTasks( mainINTEGER_TASK_PRIORITY );
     vStartGenericQueueTasks( mainGEN_QUEUE_TASK_PRIORITY );
     vStartInterruptQueueTasks();
-	vStartRecursiveMutexTasks();	
+	vStartRecursiveMutexTasks();
 	vStartBlockingQueueTasks( mainBLOCK_Q_PRIORITY );
 	vCreateBlockTimeTasks();
 	vStartSemaphoreTasks( mainSEM_TEST_PRIORITY );
 	vStartPolledQueueTasks( mainQUEUE_POLL_PRIORITY );
-	vStartQueuePeekTasks();		
+	vStartQueuePeekTasks();
+	vStartQueueSetTasks();
 
 	/* Exclude some tasks if using the kickstart version to ensure we stay within
 	the 32K code size limit. */
@@ -273,9 +282,9 @@ int main( void )
 		}
 	}
 	#endif
-	
-	
-	
+
+
+
 	/* Start the tasks defined within this file/specific to this demo. */
 	xTaskCreate( vOLEDTask, ( signed portCHAR * ) "OLED", mainOLED_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
 
@@ -305,17 +314,17 @@ void prvSetupHardware( void )
     {
         SysCtlLDOSet( SYSCTL_LDO_2_75V );
     }
-	
+
 	/* Set the clocking to run from the PLL at 50 MHz */
 	SysCtlClockSet( SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ );
-	
+
 	/* 	Enable Port F for Ethernet LEDs
 		LED0        Bit 3   Output
 		LED1        Bit 2   Output */
 	SysCtlPeripheralEnable( SYSCTL_PERIPH_GPIOF );
 	GPIODirModeSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3), GPIO_DIR_MODE_HW );
-	GPIOPadConfigSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3 ), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD );	
-	
+	GPIOPadConfigSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3 ), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD );
+
 	vParTestInitialise();
 }
 /*-----------------------------------------------------------*/
@@ -332,7 +341,7 @@ portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 	if( ulTicksSinceLastDisplay >= mainCHECK_DELAY )
 	{
 		ulTicksSinceLastDisplay = 0;
-		
+
 		/* Has an error been found in any task? */
 		if( xAreGenericQueueTasksStillRunning() != pdTRUE )
 		{
@@ -369,16 +378,26 @@ portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		else if( xAreQueuePeekTasksStillRunning() != pdTRUE )
 		{
 			xMessage.pcMessage = "ERROR IN PEEK Q";
-		}			
+		}
 		else if( xAreRecursiveMutexTasksStillRunning() != pdTRUE )
 		{
 			xMessage.pcMessage = "ERROR IN REC MUTEX";
-		}			
-		
+		}
+		else if( xAreQueueSetTasksStillRunning() != pdPASS )
+		{
+			xMessage.pcMessage = "ERROR IN Q SET";
+		}
+
+		configASSERT( strcmp( ( const char * ) xMessage.pcMessage, "PASS" ) == 0 );
+
 		/* Send the message to the OLED gatekeeper for display. */
 		xHigherPriorityTaskWoken = pdFALSE;
 		xQueueSendFromISR( xOLEDQueue, &xMessage, &xHigherPriorityTaskWoken );
 	}
+
+	/* Write to a queue that is in use as part of the queue set demo to
+	demonstrate using queue sets from an ISR. */
+	vQueueSetAccessQueueSetFromISR();
 }
 /*-----------------------------------------------------------*/
 
@@ -388,7 +407,6 @@ xOLEDMessage xMessage;
 unsigned portLONG ulY, ulMaxY;
 static portCHAR cMessage[ mainMAX_MSG_LEN ];
 extern volatile unsigned portLONG ulMaxJitter;
-unsigned portBASE_TYPE uxUnusedStackOnEntry;
 const unsigned portCHAR *pucImage;
 
 /* Functions to access the OLED.  The one used depends on the dev kit
@@ -398,14 +416,11 @@ void ( *vOLEDStringDraw )( const portCHAR *, unsigned portLONG, unsigned portLON
 void ( *vOLEDImageDraw )( const unsigned portCHAR *, unsigned portLONG, unsigned portLONG, unsigned portLONG, unsigned portLONG ) = NULL;
 void ( *vOLEDClear )( void ) = NULL;
 
-	/* Just for demo purposes. */
-	uxUnusedStackOnEntry = uxTaskGetStackHighWaterMark( NULL );
-
 	/* Map the OLED access functions to the driver functions that are appropriate
-	for the evaluation kit being used. */	
+	for the evaluation kit being used. */
 	switch( HWREG( SYSCTL_DID1 ) & SYSCTL_DID1_PRTNO_MASK )
 	{
-		case SYSCTL_DID1_PRTNO_6965	:	
+		case SYSCTL_DID1_PRTNO_6965	:
 		case SYSCTL_DID1_PRTNO_2965	:	vOLEDInit = OSRAM128x64x4Init;
 										vOLEDStringDraw = OSRAM128x64x4StringDraw;
 										vOLEDImageDraw = OSRAM128x64x4ImageDraw;
@@ -413,8 +428,8 @@ void ( *vOLEDClear )( void ) = NULL;
 										ulMaxY = mainMAX_ROWS_64;
 										pucImage = pucBasicBitmap;
 										break;
-										
-		case SYSCTL_DID1_PRTNO_1968	:	
+
+		case SYSCTL_DID1_PRTNO_1968	:
 		case SYSCTL_DID1_PRTNO_8962 :	vOLEDInit = RIT128x96x4Init;
 										vOLEDStringDraw = RIT128x96x4StringDraw;
 										vOLEDImageDraw = RIT128x96x4ImageDraw;
@@ -422,7 +437,7 @@ void ( *vOLEDClear )( void ) = NULL;
 										ulMaxY = mainMAX_ROWS_96;
 										pucImage = pucBasicBitmap;
 										break;
-										
+
 		default						:	vOLEDInit = vFormike128x128x16Init;
 										vOLEDStringDraw = vFormike128x128x16StringDraw;
 										vOLEDImageDraw = vFormike128x128x16ImageDraw;
@@ -430,28 +445,28 @@ void ( *vOLEDClear )( void ) = NULL;
 										ulMaxY = mainMAX_ROWS_128;
 										pucImage = pucGrLibBitmap;
 										break;
-										
+
 	}
 
 	ulY = ulMaxY;
-	
+
 	/* Initialise the OLED and display a startup message. */
-	vOLEDInit( ulSSI_FREQUENCY );	
+	vOLEDInit( ulSSI_FREQUENCY );
 	vOLEDStringDraw( "POWERED BY FreeRTOS", 0, 0, mainFULL_SCALE );
 	vOLEDImageDraw( pucImage, 0, mainCHARACTER_HEIGHT + 1, bmpBITMAP_WIDTH, bmpBITMAP_HEIGHT );
-	
+
 	for( ;; )
 	{
 		/* Wait for a message to arrive that requires displaying. */
 		xQueueReceive( xOLEDQueue, &xMessage, portMAX_DELAY );
-	
+
 		/* Write the message on the next available row. */
 		ulY += mainCHARACTER_HEIGHT;
 		if( ulY >= ulMaxY )
 		{
 			ulY = mainCHARACTER_HEIGHT;
 			vOLEDClear();
-			vOLEDStringDraw( pcWelcomeMessage, 0, 0, mainFULL_SCALE );			
+			vOLEDStringDraw( pcWelcomeMessage, 0, 0, mainFULL_SCALE );
 		}
 
 		/* Display the message along with the maximum jitter time from the
@@ -468,4 +483,23 @@ void vApplicationStackOverflowHook( xTaskHandle *pxTask, signed portCHAR *pcTask
 	( void ) pcTaskName;
 
 	for( ;; );
+}
+/*-----------------------------------------------------------*/
+
+void vAssertCalled( const char *pcFile, unsigned long ulLine )
+{
+volatile unsigned long ulSetTo1InDebuggerToExit = 0;
+
+	taskENTER_CRITICAL();
+	{
+		while( ulSetTo1InDebuggerToExit == 0 )
+		{
+			/* Nothing do do here.  Set the loop variable to a non zero value in
+			the debugger to step out of this function to the point that caused
+			the assertion. */
+			( void ) pcFile;
+			( void ) ulLine;
+		}
+	}
+	taskEXIT_CRITICAL();
 }
