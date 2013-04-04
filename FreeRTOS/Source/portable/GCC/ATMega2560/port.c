@@ -124,6 +124,10 @@ extern volatile tskTCB * volatile pxCurrentTCB;
 					"in		r0, __SREG__			\n\t"	\
 					"cli							\n\t"	\
 					"push	r0						\n\t"	\
+					"in		r0, 0x3b				\n\t"	\
+					"push	r0						\n\t"	\
+					"in		r0, 0x3c				\n\t"	\
+					"push	r0						\n\t"	\
 					"push	r1						\n\t"	\
 					"clr	r1						\n\t"	\
 					"push	r2						\n\t"	\
@@ -208,6 +212,10 @@ extern volatile tskTCB * volatile pxCurrentTCB;
 					"pop	r2						\n\t"	\
 					"pop	r1						\n\t"	\
 					"pop	r0						\n\t"	\
+					"out	0x3c, r0				\n\t"	\
+					"pop	r0						\n\t"	\
+					"out	0x3b, r0				\n\t"	\
+					"pop	r0						\n\t"	\
 					"out	__SREG__, r0			\n\t"	\
 					"pop	r0						\n\t"	\
 				);
@@ -225,6 +233,11 @@ static void prvSetupTimerInterrupt( void );
  */
 portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack, pdTASK_CODE pxCode, void *pvParameters )
 {
+	/*
+	*  The ATMega2560 has a 17 bit PC, but gcc is unable to give us a 22 bit pointer to a function
+	*  so we only use a short var. If someday gcc will be able t give us a 3 byte pointer we should
+	*  change the size of this bar
+	*/
 unsigned short usAddress;
 
 	/* Place a few bytes of known values on the bottom of the stack. 
@@ -251,6 +264,16 @@ unsigned short usAddress;
 	usAddress >>= 8;
 	*pxTopOfStack = ( portSTACK_TYPE ) ( usAddress & ( unsigned short ) 0x00ff );
 	pxTopOfStack--;
+	/*
+	*  Implemented the 3byte addressing, it will be 0 'cause avr gcc dosn't return a 3 byte PC
+	*  It only return as 2 byte PC. 'cause of this problem with gcc we should put all the task functions
+	*  declarations in the above 64K word memory (128KBi) (see portable.h)
+	*  Based from work at
+	*  http://www.avrfreaks.net/index.php?name=PNphpBB2&file=viewtopic&t=70387
+	*  http://feilipu.posterous.com/ethermega-arduino-mega-2560-and-freertos
+	*/
+	*pxTopOfStack = ( portSTACK_TYPE ) ( ( unsigned short ) 0x0000 );
+	pxTopOfStack--;
 
 	/* Next simulate the stack as if after a call to portSAVE_CONTEXT().  
 	portSAVE_CONTEXT places the flags on the stack immediately after r0
@@ -261,6 +284,15 @@ unsigned short usAddress;
 	*pxTopOfStack = portFLAGS_INT_ENABLED;
 	pxTopOfStack--;
 
+	/*
+	*  The Atmega2560 has two more register that we are saving
+	*  The EIND and RAMPZ and we are going to initialize
+	*  this registers to 0 (default initial values)
+	*/
+	*pxTopOfStack = ( portSTACK_TYPE ) 0x00;	/* EIND */
+	pxTopOfStack--;
+	*pxTopOfStack = ( portSTACK_TYPE ) 0x00;	/* RAMPZ */
+	pxTopOfStack--;
 
 	/* Now the remaining registers.   The compiler expects R1 to be 0. */
 	*pxTopOfStack = ( portSTACK_TYPE ) 0x00;	/* R1 */

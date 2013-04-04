@@ -86,7 +86,11 @@
 #endif
 
 #ifdef GCC_MEGA_AVR
-	#include "../portable/GCC/ATMega323/portmacro.h"
+	#ifdef __AVR_ATmega2560__
+		#include "../portable/GCC/ATMega2560/portmacro.h"
+	#else
+		#include "../portable/GCC/ATMega323/portmacro.h"
+	#endif
 #endif
 
 #ifdef IAR_MEGA_AVR
